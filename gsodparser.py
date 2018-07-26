@@ -10,45 +10,9 @@ For more info on GSOD:
 https://data.noaa.gov/dataset/dataset/global-surface-summary-of-the-day-gsod
 ftp://ftp.ncdc.noaa.gov/pub/data/gsod/
 
-Installation
-------------
-1. Copy the directory gsodparser to "/path/to/gsodparser"
-2. done...
-
-Examples
---------
-# Load the module in your python script or Jupyter Notebook:
-import sys
-sys.path.append(r'/path/to/gsodparser')
-from gsodparser import gsodparser
-
-# Create the parser object
-gp = gsodparser.GsodParser(gsodDir=r'path/to/folder/with/gsod_{year}.csv')
-
-# load a full year into a Pandas DataFrame, without replacing the NULL value 
-#  without something more sensible and without adding a DATE column with the 
-#  proper python dates (raw loading).
-gsodData = gp.loadYear_raw(year=2017)
-
-# same as before, but replacing the NULLs with NaNs and adding a "DATE" columns
-gsodData = gp.loadYear(year=2017)
-
-# load the station metadata
-gsodMeta = gp.loadMetadata()
-
-# load the country list
-gsodCtry = gp.loadCountryList()
-
-# Load all: country list, metadata and one year
-gsodCtry,gsodMeta,gsodData = gp.loadAll(year=2017)
-
-# Print info about the gp object
-print(gp)
- 
-# Add a DATE column and clean the NULL values. For some column, the NULL are 
-# 9999.9 or 99.9. Those get replaced by NaNs. 
-gsodData = gsodparser.addDate(gsodData)
-gsodData = gsodparser.repaceNULLs(gsodData)
+Usage
+-----
+See README.md for more information
 '''
 
 # Load Modules
@@ -90,10 +54,16 @@ dataDefinition = {'STN':     [0,   6,   'int',None],
         
 # Functions
 def loadMetadata(filename,sep=','):
+    '''
+    Loasd the station metadata
+    '''
     return pd.read_csv(filename,dtype={'USAF':'str','WBAN':'str'},sep=sep)
 
 
 def loadCountryList(filename,sep=';'):
+    '''
+    Load the country list file
+    '''
     return pd.read_csv(filename,sep=sep)  
         
         
@@ -124,6 +94,11 @@ def loadGsod_csv(filename,sep=';'):
 
 
 def replaceNULLs(gsodData):
+    '''
+    Replace the NULL values in a data dataframe (produce by loadRawGsod_csv 
+    for example). The value of NULL for each column is given by the dictionnary
+    "dataDefinition" at the begining of this file.
+    '''
     for col in gsodData.columns:
         if col in ['STN','WBAN','MAXflag','MINflag','PRCPflag','FRSHTT']:
             continue  # skip the strings. An empty string is valid
@@ -144,6 +119,11 @@ def replaceNULLs(gsodData):
 
 
 def addDate(gsodData):
+    '''
+    Add a DATE column in a data dataframe (produce by loadRawGsod_csv 
+    for example). The DATE column is filled with datetime objects, which are 
+    very useful for time-serie analysis.
+    '''
     df = pd.DataFrame({'year':gsodData['YEAR'],'month':gsodData['MO'],'day':gsodData['DA']})
     df = pd.to_datetime(df).rename('DATE')
     return pd.concat([df,gsodData], axis=1)
@@ -262,6 +242,10 @@ class GsodParser(object):
     
     # special functions
     def __str__(self):
+        '''
+        Output when self is used in a print:
+        >>> print(self)
+        '''
         objStr =  'Object variables\n'
         objStr += '----------------\n'
         objStr += 'gsod directory: {}\n'.format(self.gsodDir)
