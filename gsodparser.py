@@ -22,40 +22,69 @@ import pandas as pd
 
 # Data definition according the GSOD packager. You can find this information 
 # in the file "GSOD_DESC.txt"
-#                'varName': [startIdx,endIdx,type,NULL]
-dataDefinition = {'STN':     [0,   6,   'int',None],
-                 'WBAN':     [7,   12,  'int',None],
-                 'YEAR':     [14,  18,  'int',None],
-                 'MO':       [18,  20,  'int',None],
-                 'DA':       [20,  22,  'int',None],
-                 'TEMP':     [24,  30,  'real',9999.9],
-                 'TEMPcnt':  [31,  33,  'int',None],
-                 'DEWP':     [35,  41,  'real',9999.9],
-                 'DEWPcnt':  [42,  44,  'int',None],
-                 'SLP':      [46,  52,  'real',9999.9],
-                 'SLPcnt':   [53,  55,  'int',None],
-                 'STP':      [57,  63,  'real',9999.9],
-                 'STPcnt':   [64,  66,  'int',None],
-                 'VISIB':    [68,  73,  'real',    999.9],
-                 'VISIBcnt': [74,  76,  'int',     None],
-                 'WDSP':     [78,  83,  'real',    999.9],
-                 'WDSPcnt':  [84,  86,  'int',     None],
-                 'MXSPD':    [88,  93,  'real',    999.9],
-                 'GUST':     [95,  100, 'real',    999.9],
-                 'MAX':      [102, 108, 'real',    9999.9],
-                 'MAXflag':  [108, 109, 'starFlag',None],
-                 'MIN':      [110, 116, 'real',    9999.9],
-                 'MINflag':  [116, 117, 'starFlag',None],
-                 'PRCP':     [118, 123, 'real',    99.99],
-                 'PRCPflag': [123, 124, 'char',    None],
-                 'SNDP':     [125, 130, 'real',    999.9],
-                 'FRSHTT':   [132, 138, 'char',    None]}
+dataDefinition = {
+    #'varName': [startIdx,endIdx,gsodType,NULL]
+    'STN':      [0,   6,   'int',     None],
+    'WBAN':     [7,   12,  'int',     None],
+    'YEAR':     [14,  18,  'int',     None],
+    'MO':       [18,  20,  'int',     None],
+    'DA':       [20,  22,  'int',     None],
+    'TEMP':     [24,  30,  'real',    9999.9],
+    'TEMPcnt':  [31,  33,  'int',     None],
+    'DEWP':     [35,  41,  'real',    9999.9],
+    'DEWPcnt':  [42,  44,  'int',     None],
+    'SLP':      [46,  52,  'real',    9999.9],
+    'SLPcnt':   [53,  55,  'int',     None],
+    'STP':      [57,  63,  'real',    9999.9],
+    'STPcnt':   [64,  66,  'int',     None],
+    'VISIB':    [68,  73,  'real',    999.9],
+    'VISIBcnt': [74,  76,  'int',     None],
+    'WDSP':     [78,  83,  'real',    999.9],
+    'WDSPcnt':  [84,  86,  'int',     None],
+    'MXSPD':    [88,  93,  'real',    999.9],
+    'GUST':     [95,  100, 'real',    999.9],
+    'MAX':      [102, 108, 'real',    9999.9],
+    'MAXflag':  [108, 109, 'starFlag',None],
+    'MIN':      [110, 116, 'real',    9999.9],
+    'MINflag':  [116, 117, 'starFlag',None],
+    'PRCP':     [118, 123, 'real',    99.99],
+    'PRCPflag': [123, 124, 'char',    None],
+    'SNDP':     [125, 130, 'real',    999.9],
+    'FRSHTT':   [132, 138, 'char',    None]
+}
+
+typeTranslation = {
+    # gsodType:pythonType
+    'int':     'int',
+    'real':    'float',
+    'char':    'str',
+    'starFlag':'str'
+}
 
         
 # Functions
 def loadMetadata(filename,sep=','):
     '''
-    Loasd the station metadata
+    Load the station metadata. By default, the station metadata are stored in 
+    "isd-history.csv". This file is provided in the raw dataset, with "," as 
+    separator. For usability, the columns "USAF" and "WBAN" are forced to 
+    string.
+
+    Usage
+    -----
+    df = loadMetadata('isd-history.csv')
+
+    Arguments
+    ---------
+    filename: string
+        Name of the csv-file with the metadata information.
+    sep: string.Default=','
+        Separator used in the csv-file.
+
+    Returns
+    -------
+    df: Pandas DataFrame
+        Dataframe mimicing the csv-file.
     '''
     return pd.read_csv(filename,dtype={'USAF':'str','WBAN':'str'},sep=sep)
 
@@ -72,14 +101,16 @@ def loadRawGsod_csv(filename,sep=';'):
     Load the raw data of "year". No processing of the NULL or of the 
     dates, just the raw data from the csv-files.
     '''
+    dtypeSpecifier = dict()
+    for k,v in dataDefinition.items():
+        dtypeSpecifier[k] = typeTranslation[v[2]]
+        # special cases
+        if ((k=='STN') or (k=='WBAN')):
+            dtypeSpecifier[k] = 'str'
+
     return pd.read_csv(filename,
                        sep=sep,
-                       dtype={'STN':'str',
-                              'WBAN':'str',
-                              'MAXflag':'str',
-                              'MINflag':'str',
-                              'PRCPflag':'str',
-                              'FRSHTT':'str'})
+                       dtype=dtypeSpecifier)
     
 
 def loadGsod_csv(filename,sep=';'):
